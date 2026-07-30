@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChatConnect Messenger</title>
+
+<!-- PWA setup -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F6A5C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ChatConnect">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand-teal:#0F6A5C;
+    --brand-green:#1FAF74;
+    --brand-blue:#2F6FED;
+    --gradient: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+    --bg-app:#EAF6F1;
+    --bg-panel:#FFFFFF;
+    --bg-chat: #F3FAF7;
+    --text-primary:#14201D;
+    --text-muted:#6B7B76;
+    --border:#E3ECE9;
+    --bubble-in:#FFFFFF;
+    --bubble-out-1:#128C7E;
+    --bubble-out-2:#1E88E5;
+    --tick-sent:#9AA5A1;
+    --tick-read:#2F6FED;
+    --danger:#E5484D;
+    --radius-lg:18px;
+    --radius-md:12px;
+    --shadow-soft: 0 8px 24px rgba(15,106,92,0.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter', sans-serif;
+    background: var(--bg-app);
+    color: var(--text-primary);
+    height:100vh;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .brand-font{ font-family:'Poppins', sans-serif; }
+
+  /* ===== App shell ===== */
+  .app{
+    display:none;
+    grid-template-columns: 76px 340px 1fr;
+    height:100vh;
+  }
+  .app.ready{ display:grid; }
+  @media (max-width: 860px){
+    .app{ grid-template-columns: 64px 1fr; }
+    .chat-panel{ display:none; }
+    .app.chat-open .sidebar-list{ display:none; }
+    .app.chat-open .chat-panel{ display:flex; grid-column: 2 / 3; }
+  }
+
+  /* ===== Rail ===== */
+  .rail{
+    background: var(--gradient);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 20px 0;
+    gap: 6px;
+  }
+  .rail-logo{
+    width:40px;height:40px;border-radius:12px;
+    background:rgba(255,255,255,0.18);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom: 22px;
+    font-size:20px;
+  }
+  .rail-btn{
+    width:46px;height:46px;
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,0.75);
+    cursor:pointer;
+    font-size:20px;
+    transition: all .18s ease;
+    position:relative;
+  }
+  .rail-btn:hover{ background:rgba(255,255,255,0.14); color:#fff; }
+  .rail-btn.active{ background:rgba(255,255,255,0.22); color:#fff; }
+  .rail-btn.active::before{
+    content:'';
+    position:absolute; left:-14px; top:50%; transform:translateY(-50%);
+    width:4px; height:22px; border-radius:4px; background:#fff;
+  }
+  .rail-spacer{ flex:1; }
+  .rail-avatar{
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,0.9);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700; color:var(--brand-teal); font-family:'Poppins';
+    cursor:pointer; border:2px solid rgba(255,255,255,0.5);
+  }
+
+  /* ===== Sidebar (chat list) ===== */
+  .sidebar-list{
+    background: var(--bg-panel);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    min-width:0;
+  }
+  .sidebar-header{
+    padding: 18px 18px 14px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .sidebar-header h1{
+    font-size:19px; font-weight:700; letter-spacing:-0.02em;
+  }
+  .fab{
+    width:38px;height:38px; border-radius:12px;
+    background: var(--gradient);
+    color:#fff; border:none; cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+    box-shadow: var(--shadow-soft);
+    transition: transform .15s ease;
+  }
+  .fab:hover{ transform: scale(1.06) rotate(90deg); }
+
+  .search-box{
+    margin: 0 16px 12px;
+    background: var(--bg-chat);
+    border-radius: 12px;
+    display:flex; align-items:center; gap:8px;
+    padding: 9px 12px;
+  }
+  .search-box input{
+    border:none; outline:none; background:transparent;
+    font-size:14px; width:100%; color:var(--text-primary); font-family:'Inter';
+  }
+  .search-box svg{ flex-shrink:0; color:var(--text-muted); }
+
+  .chat-items{ overflow-y:auto; flex:1; padding: 4px 8px; }
+  .chat-item{
+    display:flex; align-items:center; gap:12px;
+    padding: 10px; border-radius: 14px; cursor:pointer;
+    transition: background .15s ease;
+    margin-bottom:2px;
+  }
+  .chat-item:hover{ background: var(--bg-chat); }
+  .chat-item.selected{ background: #E4F3EE; }
+  .avatar{
+    width:48px;height:48px;border-radius:50%;
+    background: linear-gradient(135deg,#DCEFEA,#CFE9F5);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Poppins'; font-weight:600; color:var(--brand-teal);
+    flex-shrink:0; position:relative; font-size:16px;
+  }
+  .online-dot{
+    width:11px;height:11px;border-radius:50%;
+    background: var(--brand-green);
+    border:2px solid #fff;
+    position:absolute; bottom:-1px; right:-1px;
+  }
+  .online-dot.pulse::after{
+    content:''; position:absolute; inset:0; border-radius:50%;
+    background: var(--brand-green);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse{
+    0%{ opacity:.7; transform:scale(1); }
+    100%{ opacity:0; transform:scale(2.4); }
+  }
+  .chat-meta{ flex:1; min-width:0; }
+  .chat-meta-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .chat-name{ font-weight:600; font-size:14.5px; }
+  .chat-time{ font-size:11.5px; color:var(--text-muted); flex-shrink:0; }
+  .chat-preview{
+    font-size:13px; color:var(--text-muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:flex; align-items:center; gap:4px; margin-top:2px;
+  }
+  .unread-badge{
+    background: var(--brand-green); color:#fff;
+    font-size:11px; font-weight:700;
+    min-width:19px; height:19px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    padding:0 5px; flex-shrink:0;
+  }
+
+  /* ===== Chat panel ===== */
+  .chat-panel{ display:flex; flex-direction:column; min-width:0; background: var(--bg-chat); }
+  .chat-header{
+    background: var(--bg-panel);
+    border-bottom:1px solid var(--border);
+    padding: 12px 20px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .back-btn{ display:none; cursor:pointer; font-size:20px; color:var(--text-muted); }
+  @media (max-width:860px){ .back-btn{ display:block; } }
+  .chat-header-info{ flex:1; min-width:0; }
+  .chat-header-name{ font-weight:600; font-size:15px; }
+  .chat-header-status{ font-size:12.5px; color:var(--brand-green); font-weight:500; }
+  .chat-header-status.muted{ color: var(--text-muted); }
+  .header-icons{ display:flex; gap:6px; }
+  .icon-btn{
+    width:38px;height:38px; border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-muted); cursor:pointer; font-size:17px;
+    transition: background .15s ease;
+  }
+  .icon-btn:hover{ background: var(--bg-chat); color: var(--brand-teal); }
+
+  .messages{
+    flex:1; overflow-y:auto; padding: 20px 6%;
+    display:flex; flex-direction:column; gap:2px;
+    background-image: radial-gradient(circle at 1px 1px, rgba(15,106,92,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .date-divider{
+    align-self:center; background:#fff; color:var(--text-muted);
+    font-size:11.5px; padding:5px 14px; border-radius:20px; margin: 14px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight:500;
+  }
+  .msg-row{ display:flex; margin: 3px 0; animation: rise .22s ease; }
+  @keyframes rise{ from{ opacity:0; transform: translateY(6px); } to{ opacity:1; transform:none; } }
+  .msg-row.out{ justify-content:flex-end; }
+  .bubble{
+    max-width: 62%;
+    padding: 9px 12px 7px;
+    border-radius: var(--radius-lg);
+    font-size: 14.2px;
+    line-height:1.42;
+    position:relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .msg-row.in .bubble{
+    background: var(--bubble-in);
+    border-bottom-left-radius:4px;
+    color: var(--text-primary);
+  }
+  .msg-row.out .bubble{
+    background: linear-gradient(135deg, var(--bubble-out-1), var(--bubble-out-2));
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .bubble-meta{
+    display:flex; align-items:center; gap:4px; justify-content:flex-end;
+    font-size:10.5px; margin-top:4px; opacity:.85;
+  }
+  .msg-row.in .bubble-meta{ color: var(--text-muted); }
+  .ticks{ display:inline-flex; }
+  .ticks svg{ width:15px; height:11px; }
+  .tick-read{ color: #7FE3FF !important; }
+
+  .typing-row{ display:flex; align-items:center; gap:6px; margin: 6px 0; }
+  .typing-bubble{
+    background:#fff; border-radius:16px; border-bottom-left-radius:4px;
+    padding: 11px 14px; display:flex; gap:4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .typing-bubble span{
+    width:6px;height:6px;border-radius:50%; background: var(--text-muted);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing-bubble span:nth-child(2){ animation-delay:.15s; }
+  .typing-bubble span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce{ 0%,60%,100%{ transform: translateY(0); opacity:.5; } 30%{ transform: translateY(-4px); opacity:1; } }
+
+  .composer{
+    background: var(--bg-panel);
+    border-top:1px solid var(--border);
+    padding: 12px 16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .composer input{
+    flex:1; border:1px solid var(--border); outline:none;
+    background: var(--bg-chat);
+    padding: 12px 16px; border-radius: 22px; font-size:14px; font-family:'Inter';
+    transition: border-color .15s ease;
+  }
+  .composer input:focus{ border-color: var(--brand-green); }
+  .send-btn{
+    width:44px;height:44px; border-radius:50%; border:none; cursor:pointer;
+    background: var(--gradient); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    transition: transform .12s ease;
+    flex-shrink:0;
+  }
+  .send-btn:active{ transform: scale(0.9); }
+
+  .empty-state{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color: var(--text-muted); gap:14px; text-align:center; padding:40px;
+  }
+  .empty-state .logo-big{
+    width:88px;height:88px;border-radius:26px; background: var(--gradient);
+    display:flex; align-items:center; justify-content:center; font-size:42px; color:#fff;
+    box-shadow: var(--shadow-soft);
+  }
+  .empty-state h2{ font-family:'Poppins'; color: var(--text-primary); font-size:20px; }
+  .empty-state p{ font-size:13.5px; max-width:280px; }
+
+  /* ===== New chat modal ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(20,32,29,0.4);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 50; opacity:0; pointer-events:none; transition: opacity .2s ease;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:all; }
+  .modal{
+    background:#fff; border-radius: 20px; padding: 26px;
+    width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    transform: translateY(10px); transition: transform .2s ease;
+  }
+  .modal-overlay.show .modal{ transform: translateY(0); }
+  .modal h3{ font-family:'Poppins'; font-size:17px; margin-bottom:6px; }
+  .modal p{ font-size:12.5px; color:var(--text-muted); margin-bottom:16px; }
+  .modal input{
+    width:100%; padding: 11px 14px; border-radius:12px; border:1px solid var(--border);
+    outline:none; font-size:14px; margin-bottom:10px; font-family:'Inter';
+  }
+  .modal input:focus{ border-color: var(--brand-green); }
+  .modal-error{ color: var(--danger); font-size:12.5px; margin-bottom:10px; min-height:16px; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:6px; }
+  .btn{
+    padding: 9px 18px; border-radius:12px; border:none; cursor:pointer;
+    font-size:13.5px; font-weight:600; font-family:'Inter'; transition: opacity .15s ease;
+  }
+  .btn:hover{ opacity:.88; }
+  .btn-ghost{ background: var(--bg-chat); color: var(--text-primary); }
+  .btn-primary{ background: var(--gradient); color:#fff; }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background: #C9DEDA; border-radius:10px; }
+
+  /* ===== Login / OTP screen ===== */
+  .login-screen{
+    position:fixed; inset:0; background: var(--gradient);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 100; padding:20px;
+  }
+  .login-card{
+    background:#fff; border-radius:24px; padding: 36px 32px;
+    width: 380px; max-width:100%; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    text-align:center;
+  }
+  .login-logo{
+    width:64px;height:64px;border-radius:20px; background: var(--gradient);
+    display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff;
+    margin: 0 auto 16px;
+  }
+  .login-card h2{ font-family:'Poppins'; font-size:20px; margin-bottom:6px; }
+  .login-card p{ font-size:13px; color:var(--text-muted); margin-bottom:22px; line-height:1.5; }
+  .login-card input{
+    width:100%; padding: 13px 16px; border-radius:12px; border:1px solid var(--border);
+    outline:none; font-size:15px; margin-bottom:12px; font-family:'Inter'; text-align:center;
+    letter-spacing:0.5px;
+  }
+  .login-card input:focus{ border-color: var(--brand-green); }
+  .login-card .btn-primary{ width:100%; padding:13px; border-radius:12px; font-size:14.5px; }
+  .login-card .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .login-error{ color: var(--danger); font-size:12.5px; margin-bottom:10px; min-height:16px; }
+  .login-hint{ font-size:11.5px; color:var(--text-muted); margin-top:14px; }
+  .login-hint a{ color: var(--brand-blue); cursor:pointer; text-decoration:none; }
+  #recaptcha-container{ display:flex; justify-content:center; margin-bottom: 14px; }
+  .login-loading{ font-size:13px; color: var(--text-muted); margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<!-- Firebase Phone Auth login screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">💬</div>
+
+    <!-- Step 1: phone number -->
+    <div id="phoneStep">
+      <h2 class="brand-font">ChatConnect এ স্বাগতম</h2>
+      <p>আপনার ফোন নম্বর দিন, আমরা একটা OTP পাঠাবো (Firebase দিয়ে, বিনামূল্যে)</p>
+      <input type="tel" id="loginPhone" placeholder="+8801XXXXXXXXX">
+      <div class="login-error" id="phoneError"></div>
+      <div id="recaptcha-container"></div>
+      <button class="btn btn-primary" id="sendOtpBtn">OTP পাঠান</button>
+    </div>
+
+    <!-- Step 2: OTP code -->
+    <div id="otpStep" style="display:none;">
+      <h2 class="brand-font">কোড দিন</h2>
+      <p id="otpSentTo">SMS এ পাঠানো ৬-সংখ্যার কোডটি দিন</p>
+      <input type="text" id="loginOtp" placeholder="------" maxlength="6" inputmode="numeric">
+      <div class="login-error" id="otpError"></div>
+      <button class="btn btn-primary" id="verifyOtpBtn">যাচাই করুন</button>
+      <div class="login-hint"><a id="resendOtp">আবার কোড পাঠান</a> · <a id="changeNumber">নম্বর পাল্টান</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app">
+
+  <!-- Left icon rail -->
+  <div class="rail">
+    <div class="rail-logo brand-font">💬</div>
+    <div class="rail-btn active" data-tab="chats" title="Chats">💬</div>
+    <div class="rail-btn" data-tab="status" title="Status">◎</div>
+    <div class="rail-btn" data-tab="calls" title="Calls">📞</div>
+    <div class="rail-spacer"></div>
+    <div class="rail-btn" data-tab="settings" title="Settings">⚙</div>
+    <div class="rail-avatar" title="তুমি">তু</div>
+  </div>
+
+  <!-- Chat list -->
+  <div class="sidebar-list">
+    <div class="sidebar-header">
+      <h1 class="brand-font">চ্যাট</h1>
+      <button class="fab" id="newChatBtn" title="New Chat">+</button>
+    </div>
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="সার্চ বা নতুন চ্যাট">
+    </div>
+    <div class="chat-items" id="chatItems"></div>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-panel" id="chatPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="logo-big">💬</div>
+      <h2 class="brand-font">ChatConnect Messenger</h2>
+      <p>বাম পাশ থেকে একটা চ্যাট বেছে নিন, অথবা নতুন চ্যাট শুরু করুন ফোন নম্বর দিয়ে।</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- New Chat Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 class="brand-font">নতুন চ্যাট</h3>
+    <p>যার সাথে চ্যাট করতে চান তার ফোন নম্বর দিন</p>
+    <input type="tel" id="phoneInput" placeholder="+8801XXXXXXXXX">
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancel">বাতিল</button>
+      <button class="btn btn-primary" id="modalSubmit">চ্যাট শুরু করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat build — simplest for RecaptchaVerifier + Phone Auth) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<script>
+/* =========================================================
+   ChatConnect Messenger — Firebase Phone Auth login flow
+   =========================================================
+
+   SETUP REQUIRED before this works:
+   1. Go to Firebase Console → create a project (free)
+   2. Build → Authentication → Sign-in method → enable "Phone"
+   3. Project Settings → General → scroll to "Your apps" → add a Web app
+      → copy the firebaseConfig object show below and paste it in.
+   4. Authentication → Settings → Authorized domains → add the domain
+      this page will be served from (localhost is allowed by default).
+   5. Backend also needs a matching Firebase Admin service account —
+      see FIREBASE_SERVICE_ACCOUNT_PATH in the backend .env.example.
+   ========================================================= */
+
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID",
+};
+
+// Backend API base URL
+const API_BASE_URL = "http://localhost:5000";
+
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+
+let confirmationResult = null;
+let accessToken = null;
+let refreshToken = null;
+
+function setupRecaptcha() {
+  if (window.recaptchaVerifier) return;
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'normal',
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupRecaptcha();
+});
+
+document.getElementById('sendOtpBtn').onclick = async () => {
+  const phoneInputEl = document.getElementById('loginPhone');
+  const errorEl = document.getElementById('phoneError');
+  const phone = phoneInputEl.value.trim();
+
+  if (!/^\+\d{8,15}$/.test(phone)) {
+    errorEl.textContent = 'দেশের কোড সহ সঠিক ফোন নম্বর দিন (যেমন +8801XXXXXXXXX)';
+    return;
+  }
+  errorEl.textContent = '';
+
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'পাঠানো হচ্ছে...';
+
+  try {
+    confirmationResult = await fbAuth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
+    document.getElementById('phoneStep').style.display = 'none';
+    document.getElementById('otpStep').style.display = 'block';
+    document.getElementById('otpSentTo').textContent = `${phone} নম্বরে পাঠানো ৬-সংখ্যার কোডটি দিন`;
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = 'OTP পাঠাতে সমস্যা হয়েছে: ' + (err.message || 'আবার চেষ্টা করুন');
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.render().then((widgetId) => {
+        grecaptcha.reset(widgetId);
+      });
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'OTP পাঠান';
+  }
+};
+
+document.getElementById('verifyOtpBtn').onclick = async () => {
+  const code = document.getElementById('loginOtp').value.trim();
+  const errorEl = document.getElementById('otpError');
+
+  if (!/^\d{6}$/.test(code)) {
+    errorEl.textContent = '৬-সংখ্যার সঠিক কোড দিন';
+    return;
+  }
+  errorEl.textContent = '';
+
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'যাচাই হচ্ছে...';
+
+  try {
+    // 1. Confirm the code with Firebase directly
+    const result = await confirmationResult.confirm(code);
+    const idToken = await result.user.getIdToken();
+
+    // 2. Exchange the Firebase ID token for our own backend JWTs
+    const deviceId = localStorage.getItem('cc_device_id') || crypto.randomUUID();
+    localStorage.setItem('cc_device_id', deviceId);
+
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify-firebase-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, deviceId, platform: 'web' }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorEl.textContent = data.message || 'যাচাই করতে সমস্যা হয়েছে';
+      return;
+    }
+
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken;
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('ready');
+
+    // If this is a new user or profile isn't complete, you'd show a
+    // profile-setup step here before entering the main app — omitted
+    // in this demo for brevity. data.needsProfileSetup tells you when.
+
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = 'ভুল কোড অথবা কোডের মেয়াদ শেষ। আবার চেষ্টা করুন।';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'যাচাই করুন';
+  }
+};
+
+document.getElementById('resendOtp').onclick = () => document.getElementById('sendOtpBtn').click();
+document.getElementById('changeNumber').onclick = () => {
+  document.getElementById('otpStep').style.display = 'none';
+  document.getElementById('phoneStep').style.display = 'block';
+};
+</script>
+
+<script>
+/* =========================================================
+   ChatConnect Messenger — Frontend Demo Logic
+   Vanilla JS, no framework. Mock data + simulated real-time
+   behavior (typing indicator, ticks) so the UI is fully
+   explorable without a live backend running.
+
+   To wire this up to the real backend built earlier:
+   - Replace MOCK_CONTACTS / MOCK_MESSAGES with fetch() calls to
+     GET /api/users/lookup, GET /api/messages/:userId etc.
+   - Replace simulateReply()/sendMessage() with a real
+     socket.io-client connection: io(API_URL, { auth: { token }})
+     and emit('message:send', {...}) per the socket contract
+     documented in the backend README.
+   ========================================================= */
+
+const TICK_SENT = `<svg viewBox="0 0 16 11" fill="none"><path d="M1 5.5L5 9.5L15 1" stroke="currentColor" stroke-width="1.6"/></svg>`;
+const TICK_DOUBLE = `<svg viewBox="0 0 20 11" fill="none"><path d="M1 5.5L5 9.5L15 1" stroke="currentColor" stroke-width="1.6"/><path d="M6 5.5L10 9.5L20 1" stroke="currentColor" stroke-width="1.6"/></svg>`;
+
+let contacts = [
+  { id: 'c1', name: 'রাহাত ইসলাম', initials: 'রই', online: true, lastSeen: null,
+    messages: [
+      { from: 'them', text: 'ভাই, backend টা দেখলাম — Socket.IO integration টা সুন্দর হয়েছে 🔥', time: '10:12', status: 'read' },
+      { from: 'me', text: 'ধন্যবাদ! Redis দিয়ে presence track করছি, multi-device ও handle করে।', time: '10:14', status: 'read' },
+      { from: 'them', text: 'OTP flow টা test করলাম, dev mode এ console এ code দেখাচ্ছে ঠিকঠাক।', time: '10:15', status: 'read' },
+    ]},
+  { id: 'c2', name: 'সাদিয়া আক্তার', initials: 'সআ', online: false, lastSeen: 'আজ সকাল ৯:৪০',
+    messages: [
+      { from: 'them', text: 'Group chat feature এর admin control টা কবে রেডি হবে?', time: 'গতকাল', status: 'read' },
+      { from: 'me', text: 'API রেডি — add/remove member, mute, delete সব আছে। Frontend এ যোগ করবো এরপর।', time: 'গতকাল', status: 'read' },
+    ]},
+  { id: 'c3', name: 'তানভীর হাসান', initials: 'তহ', online: true, lastSeen: null,
+    messages: [
+      { from: 'me', text: 'Video call signaling এর জন্য WebRTC offer/answer সব socket দিয়ে পাঠাচ্ছি।', time: '৯:৫০', status: 'delivered' },
+    ]},
+  { id: 'c4', name: 'নুসরাত জাহান', initials: 'নজ', online: false, lastSeen: '২ ঘণ্টা আগে',
+    messages: [
+      { from: 'them', text: 'Design টা বেশ ভালো লাগলো, WhatsApp এর মতো কিন্তু নিজস্ব একটা লুক আছে।', time: 'সোম', status: 'read' },
+    ]},
+];
+
+let activeChatId = null;
+let typingTimeout = null;
+
+const chatItemsEl = document.getElementById('chatItems');
+const chatPanel = document.getElementById('chatPanel');
+const emptyState = document.getElementById('emptyState');
+const appEl = document.getElementById('app');
+
+function renderChatList(filter = '') {
+  chatItemsEl.innerHTML = '';
+  contacts
+    .filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
+    .forEach(c => {
+      const last = c.messages[c.messages.length - 1];
+      const div = document.createElement('div');
+      div.className = 'chat-item' + (c.id === activeChatId ? ' selected' : '');
+      div.innerHTML = `
+        <div class="avatar">${c.initials}${c.online ? '<span class="online-dot pulse"></span>' : ''}</div>
+        <div class="chat-meta">
+          <div class="chat-meta-top">
+            <span class="chat-name">${c.name}</span>
+            <span class="chat-time">${last ? last.time : ''}</span>
+          </div>
+          <div class="chat-preview">
+            ${last && last.from === 'me' ? tickIcon(last.status) : ''}
+            <span>${last ? last.text : 'কোনো মেসেজ নেই'}</span>
+          </div>
+        </div>
+      `;
+      div.onclick = () => openChat(c.id);
+      chatItemsEl.appendChild(div);
+    });
+}
+
+function tickIcon(status) {
+  if (status === 'read') return `<span class="ticks tick-read" style="color:var(--brand-blue)">${TICK_DOUBLE}</span>`;
+  if (status === 'delivered') return `<span class="ticks" style="color:var(--tick-sent)">${TICK_DOUBLE}</span>`;
+  return `<span class="ticks" style="color:var(--tick-sent)">${TICK_SENT}</span>`;
+}
+
+function openChat(id) {
+  activeChatId = id;
+  renderChatList(document.getElementById('searchInput').value);
+  renderChatPanel();
+  appEl.classList.add('chat-open');
+}
+
+function renderChatPanel() {
+  const c = contacts.find(x => x.id === activeChatId);
+  if (!c) { chatPanel.innerHTML = ''; chatPanel.appendChild(emptyState); return; }
+
+  chatPanel.innerHTML = `
+    <div class="chat-header">
+      <span class="back-btn" id="backBtn">←</span>
+      <div class="avatar">${c.initials}${c.online ? '<span class="online-dot"></span>' : ''}</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">${c.name}</div>
+        <div class="chat-header-status ${c.online ? '' : 'muted'}" id="statusLine">
+          ${c.online ? 'অনলাইন' : 'সর্বশেষ দেখা ' + c.lastSeen}
+        </div>
+      </div>
+      <div class="header-icons">
+        <div class="icon-btn" title="Video Call">🎥</div>
+        <div class="icon-btn" title="Voice Call">📞</div>
+        <div class="icon-btn" title="Search">🔍</div>
+      </div>
+    </div>
+    <div class="messages" id="messagesEl"></div>
+    <div class="composer">
+      <div class="icon-btn" title="Emoji">😊</div>
+      <div class="icon-btn" title="Attach">📎</div>
+      <input type="text" id="msgInput" placeholder="মেসেজ লিখুন">
+      <button class="send-btn" id="sendBtn">➤</button>
+    </div>
+  `;
+
+  document.getElementById('backBtn').onclick = () => appEl.classList.remove('chat-open');
+  renderMessages(c);
+
+  const input = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.onclick = () => sendMessage(c);
+  input.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(c); };
+}
+
+function renderMessages(c) {
+  const el = document.getElementById('messagesEl');
+  el.innerHTML = `<div class="date-divider">আজ</div>`;
+  c.messages.forEach(m => {
+    el.innerHTML += `
+      <div class="msg-row ${m.from === 'me' ? 'out' : 'in'}">
+        <div class="bubble">
+          <div>${m.text}</div>
+          <div class="bubble-meta">
+            <span>${m.time}</span>
+            ${m.from === 'me' ? tickIcon(m.status) : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendMessage(c) {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  const msg = { from: 'me', text, time, status: 'sent' };
+  c.messages.push(msg);
+  input.value = '';
+  renderMessages(c);
+  renderChatList(document.getElementById('searchInput').value);
+
+  // Simulate delivery -> read ticks, then a reply with typing indicator
+  setTimeout(() => { msg.status = 'delivered'; renderMessages(c); }, 500);
+  setTimeout(() => { msg.status = 'read'; renderMessages(c); renderChatList(); }, 1400);
+  simulateReply(c);
+}
+
+function simulateReply(c) {
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    const el = document.getElementById('messagesEl');
+    if (!el) return;
+    const statusLine = document.getElementById('statusLine');
+    if (statusLine) { statusLine.textContent = 'টাইপ করছে...'; statusLine.classList.remove('muted'); }
+
+    const typingRow = document.createElement('div');
+    typingRow.className = 'typing-row';
+    typingRow.innerHTML = `<div class="typing-bubble"><span></span><span></span><span></span></div>`;
+    typingRow.id = 'typingRow';
+    el.appendChild(typingRow);
+    el.scrollTop = el.scrollHeight;
+
+    setTimeout(() => {
+      typingRow.remove();
+      const replies = ['ঠিক আছে 👍', 'বুঝলাম, দেখছি এটা।', 'সুন্দর! আরেকটু details দাও তো।', 'হ্যাঁ, একদম ঠিক বলেছো।'];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      const now = new Date();
+      const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      c.messages.push({ from: 'them', text: reply, time });
+      renderMessages(c);
+      renderChatList(document.getElementById('searchInput').value);
+      if (statusLine) {
+        statusLine.textContent = c.online ? 'অনলাইন' : 'সর্বশেষ দেখা ' + c.lastSeen;
+        if (!c.online) statusLine.classList.add('muted');
+      }
+    }, 1800);
+  }, 600);
+}
+
+document.getElementById('searchInput').addEventListener('input', (e) => renderChatList(e.target.value));
+
+/* ===== New chat modal (mirrors POST /api/users/lookup flow) ===== */
+const modalOverlay = document.getElementById('modalOverlay');
+const phoneInput = document.getElementById('phoneInput');
+const modalError = document.getElementById('modalError');
+
+document.getElementById('newChatBtn').onclick = () => {
+  modalOverlay.classList.add('show');
+  modalError.textContent = '';
+  phoneInput.value = '';
+  phoneInput.focus();
+};
+document.getElementById('modalCancel').onclick = () => modalOverlay.classList.remove('show');
+modalOverlay.onclick = (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove('show'); };
+
+document.getElementById('modalSubmit').onclick = () => {
+  const phone = phoneInput.value.trim();
+  if (!/^\+?\d{7,15}$/.test(phone)) {
+    modalError.textContent = 'সঠিক ফোন নম্বর দিন';
+    return;
+  }
+  // Simulated lookup — in production this calls GET /api/users/lookup?phone=...
+  const found = Math.random() > 0.3;
+  if (!found) {
+    modalError.textContent = 'User not found — এই নম্বরে ChatConnect অ্যাকাউন্ট নেই';
+    return;
+  }
+  const newContact = {
+    id: 'c' + Date.now(),
+    name: phone,
+    initials: phone.slice(-2),
+    online: true,
+    lastSeen: null,
+    messages: [],
+  };
+  contacts.unshift(newContact);
+  modalOverlay.classList.remove('show');
+  renderChatList();
+  openChat(newContact.id);
+};
+
+/* ===== Rail tab switching (visual only in this demo) ===== */
+document.querySelectorAll('.rail-btn[data-tab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.rail-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+});
+
+renderChatList();
+</script>
+<!-- PWA: install prompt banner -->
+<div id="installBanner" style="display:none; position:fixed; left:16px; right:16px; bottom:16px; z-index:200; background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.18); padding:14px 16px; align-items:center; gap:12px;">
+  <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#0F6A5C,#2F6FED);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">💬</div>
+  <div style="flex:1; font-family:'Inter',sans-serif;">
+    <div style="font-weight:600; font-size:13.5px; color:#14201D;">ChatConnect ইনস্টল করুন</div>
+    <div style="font-size:11.5px; color:#6B7B76;">হোম স্ক্রিন থেকে সরাসরি খুলুন, অ্যাপের মতো</div>
+  </div>
+  <button id="installBtn" style="background:linear-gradient(135deg,#0F6A5C,#2F6FED); color:#fff; border:none; padding:9px 16px; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; flex-shrink:0;">ইনস্টল</button>
+  <span id="dismissInstall" style="color:#6B7B76; font-size:18px; cursor:pointer; padding:4px;">✕</span>
+</div>
+
+<script>
+// Register service worker (enables offline app-shell + installability)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then((reg) => console.log('[PWA] Service worker registered:', reg.scope))
+      .catch((err) => console.error('[PWA] Service worker registration failed:', err));
+  });
+}
+
+// "Add to Home Screen" custom install prompt (Android/desktop Chrome)
+let deferredInstallPrompt = null;
+const installBanner = document.getElementById('installBanner');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installBanner.style.display = 'flex';
+});
+
+document.getElementById('installBtn').onclick = async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installBanner.style.display = 'none';
+};
+
+document.getElementById('dismissInstall').onclick = () => {
+  installBanner.style.display = 'none';
+};
+
+window.addEventListener('appinstalled', () => {
+  installBanner.style.display = 'none';
+  console.log('[PWA] App installed');
+});
+</script>
+
+</body>
+</html>

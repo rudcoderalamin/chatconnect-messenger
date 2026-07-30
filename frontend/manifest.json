@@ -1,0 +1,25 @@
+{
+  "name": "ChatConnect Messenger",
+  "short_name": "ChatConnect",
+  "description": "Modern real-time messaging app — chat, voice & video calls, groups.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#EAF6F1",
+  "theme_color": "#0F6A5C",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
