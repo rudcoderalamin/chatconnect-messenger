@@ -884,7 +884,7 @@
         <p>আপনার ফোন নম্বর দিন, আমরা একটা OTP পাঠাবো (Firebase দিয়ে, বিনামূল্যে)</p>
         <input type="tel" id="loginPhone" placeholder="+8801XXXXXXXXX">
         <div class="login-error" id="phoneError"></div>
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-container" style="display:none;"></div>
         <button class="btn btn-primary" id="sendOtpBtn">OTP পাঠান</button>
       </div>
 
@@ -987,12 +987,12 @@
     // Backend API base URL
     const API_BASE_URL = "https://chatconnect-messenger-2.onrender.com";
 
-    firebase.initializeApp(firebaseConfig);
-    const fbAuth = firebase.auth();
-
-    let confirmationResult = null;
-    let accessToken = null;
-    let refreshToken = null;
+// TESTING ONLY: skips the reCAPTCHA widget entirely. This only works for
+// phone numbers added under Firebase Console → Authentication → Sign-in
+// method → Phone → "Phone numbers for testing". Real phone numbers will
+// fail without a working reCAPTCHA, so remove this line before accepting
+// real users / going live.
+fbAuth.settings.appVerificationDisabledForTesting = true;
 
     function setupRecaptcha() {
       if (window.recaptchaVerifier) return;
