@@ -50,6 +50,8 @@ async function getMe(req, res) {
     about: user.about,
     privacy: user.privacy,
     twoStepEnabled: user.twoStepEnabled,
+    autoReplyEnabled: user.autoReplyEnabled,
+    autoReplyText: user.autoReplyText,
   });
 }
 
@@ -65,7 +67,7 @@ async function lookupByPhone(req, res) {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    const user = await User.findOne({ phone }).select('_id phone name photo about online lastSeen privacy');
+    const user = await User.findOne({ phone }).select('_id phone name photo about online lastSeen privacy autoReplyEnabled autoReplyText');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -82,10 +84,42 @@ async function lookupByPhone(req, res) {
       about: user.privacy.hideAbout ? '' : user.about,
       online: user.privacy.hideOnline ? undefined : user.online,
       lastSeen: user.privacy.hideLastSeen ? undefined : user.lastSeen,
+      autoReplyEnabled: user.autoReplyEnabled,
+      autoReplyText: user.autoReplyText,
     });
   } catch (err) {
     console.error('[lookupByPhone]', err);
     return res.status(500).json({ message: 'Lookup failed' });
+  }
+}
+
+/**
+ * PUT /api/users/reply-settings
+ * body: { autoReplyEnabled, autoReplyText }
+ */
+async function updateReplySettings(req, res) {
+  try {
+    const { autoReplyEnabled, autoReplyText } = req.body;
+    const user = req.user;
+
+    if (autoReplyEnabled !== undefined) {
+      user.autoReplyEnabled = Boolean(autoReplyEnabled);
+    }
+
+    if (autoReplyText !== undefined) {
+      user.autoReplyText = String(autoReplyText).trim() || 'আমি মেসেজটি পেলাম। একটু পরে উত্তর দেব।';
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Reply settings updated',
+      autoReplyEnabled: user.autoReplyEnabled,
+      autoReplyText: user.autoReplyText,
+    });
+  } catch (err) {
+    console.error('[updateReplySettings]', err);
+    return res.status(500).json({ message: 'Failed to update reply settings' });
   }
 }
 
@@ -162,6 +196,7 @@ module.exports = {
   updateProfile,
   getMe,
   lookupByPhone,
+  updateReplySettings,
   updatePrivacy,
   blockUser,
   unblockUser,

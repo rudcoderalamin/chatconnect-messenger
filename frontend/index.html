@@ -975,13 +975,13 @@
        ========================================================= */
 
     const firebaseConfig = {
-     apiKey: "AIzaSyCYWvIVgLi6hSe0SY8HepcsifFnlMOdfus",
-     authDomain: "chatconnect-c1adf.firebaseapp.com",
-     projectId: "chatconnect-c1adf",
-     storageBucket: "chatconnect-c1adf.firebasestorage.app",
-     messagingSenderId: "147716144009",
-     appId: "1:147716144009:web:2932698065da368c4dbf58",
-     measurementId: "G-78P6VTJ3QB",
+      apiKey: "AIzaSyCYWvIVgLi6hSe0SY8HepcsifFnlMOdfus",
+      authDomain: "chatconnect-c1adf.firebaseapp.com",
+      projectId: "chatconnect-c1adf",
+      storageBucket: "chatconnect-c1adf.firebasestorage.app",
+      messagingSenderId: "147716144009",
+      appId: "1:147716144009:web:2932698065da368c4dbf58",
+      measurementId: "G-78P6VTJ3QB",
     }
 
     // Backend API base URL
@@ -1064,8 +1064,8 @@
 
         const res = await fetch(`${API_BASE_URL}/api/auth/verify-firebase-token`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({idToken, deviceId, platform: 'web'}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, deviceId, platform: 'web' }),
         });
         const data = await res.json();
 
@@ -1123,28 +1123,28 @@
       {
         id: 'c1', name: 'রাহাত ইসলাম', initials: 'রই', online: true, lastSeen: null,
         messages: [
-          {from: 'them', text: 'ভাই, backend টা দেখলাম — Socket.IO integration টা সুন্দর হয়েছে 🔥', time: '10:12', status: 'read'},
-          {from: 'me', text: 'ধন্যবাদ! Redis দিয়ে presence track করছি, multi-device ও handle করে।', time: '10:14', status: 'read'},
-          {from: 'them', text: 'OTP flow টা test করলাম, dev mode এ console এ code দেখাচ্ছে ঠিকঠাক।', time: '10:15', status: 'read'},
+          { from: 'them', text: 'ভাই, backend টা দেখলাম — Socket.IO integration টা সুন্দর হয়েছে 🔥', time: '10:12', status: 'read' },
+          { from: 'me', text: 'ধন্যবাদ! Redis দিয়ে presence track করছি, multi-device ও handle করে।', time: '10:14', status: 'read' },
+          { from: 'them', text: 'OTP flow টা test করলাম, dev mode এ console এ code দেখাচ্ছে ঠিকঠাক।', time: '10:15', status: 'read' },
         ]
       },
       {
         id: 'c2', name: 'সাদিয়া আক্তার', initials: 'সআ', online: false, lastSeen: 'আজ সকাল ৯:৪০',
         messages: [
-          {from: 'them', text: 'Group chat feature এর admin control টা কবে রেডি হবে?', time: 'গতকাল', status: 'read'},
-          {from: 'me', text: 'API রেডি — add/remove member, mute, delete সব আছে। Frontend এ যোগ করবো এরপর।', time: 'গতকাল', status: 'read'},
+          { from: 'them', text: 'Group chat feature এর admin control টা কবে রেডি হবে?', time: 'গতকাল', status: 'read' },
+          { from: 'me', text: 'API রেডি — add/remove member, mute, delete সব আছে। Frontend এ যোগ করবো এরপর।', time: 'গতকাল', status: 'read' },
         ]
       },
       {
         id: 'c3', name: 'তানভীর হাসান', initials: 'তহ', online: true, lastSeen: null,
         messages: [
-          {from: 'me', text: 'Video call signaling এর জন্য WebRTC offer/answer সব socket দিয়ে পাঠাচ্ছি।', time: '৯:৫০', status: 'delivered'},
+          { from: 'me', text: 'Video call signaling এর জন্য WebRTC offer/answer সব socket দিয়ে পাঠাচ্ছি।', time: '৯:৫০', status: 'delivered' },
         ]
       },
       {
         id: 'c4', name: 'নুসরাত জাহান', initials: 'নজ', online: false, lastSeen: '২ ঘণ্টা আগে',
         messages: [
-          {from: 'them', text: 'Design টা বেশ ভালো লাগলো, WhatsApp এর মতো কিন্তু নিজস্ব একটা লুক আছে।', time: 'সোম', status: 'read'},
+          { from: 'them', text: 'Design টা বেশ ভালো লাগলো, WhatsApp এর মতো কিন্তু নিজস্ব একটা লুক আছে।', time: 'সোম', status: 'read' },
         ]
       },
     ];
@@ -1198,7 +1198,7 @@
 
     function renderChatPanel() {
       const c = contacts.find(x => x.id === activeChatId);
-      if (!c) {chatPanel.innerHTML = ''; chatPanel.appendChild(emptyState); return;}
+      if (!c) { chatPanel.innerHTML = ''; chatPanel.appendChild(emptyState); return; }
 
       chatPanel.innerHTML = `
     <div class="chat-header">
@@ -1231,7 +1231,7 @@
       const input = document.getElementById('msgInput');
       const sendBtn = document.getElementById('sendBtn');
       sendBtn.onclick = () => sendMessage(c);
-      input.onkeydown = (e) => {if (e.key === 'Enter') sendMessage(c);};
+      input.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(c); };
     }
 
     function renderMessages(c) {
@@ -1260,48 +1260,15 @@
 
       const now = new Date();
       const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-      const msg = {from: 'me', text, time, status: 'sent'};
+      const msg = { from: 'me', text, time, status: 'sent' };
       c.messages.push(msg);
       input.value = '';
       renderMessages(c);
       renderChatList(document.getElementById('searchInput').value);
 
-      // Simulate delivery -> read ticks, then a reply with typing indicator
-      setTimeout(() => {msg.status = 'delivered'; renderMessages(c);}, 500);
-      setTimeout(() => {msg.status = 'read'; renderMessages(c); renderChatList();}, 1400);
-      simulateReply(c);
-    }
-
-    function simulateReply(c) {
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        const el = document.getElementById('messagesEl');
-        if (!el) return;
-        const statusLine = document.getElementById('statusLine');
-        if (statusLine) {statusLine.textContent = 'টাইপ করছে...'; statusLine.classList.remove('muted');}
-
-        const typingRow = document.createElement('div');
-        typingRow.className = 'typing-row';
-        typingRow.innerHTML = `<div class="typing-bubble"><span></span><span></span><span></span></div>`;
-        typingRow.id = 'typingRow';
-        el.appendChild(typingRow);
-        el.scrollTop = el.scrollHeight;
-
-        setTimeout(() => {
-          typingRow.remove();
-          const replies = ['ঠিক আছে 👍', 'বুঝলাম, দেখছি এটা।', 'সুন্দর! আরেকটু details দাও তো।', 'হ্যাঁ, একদম ঠিক বলেছো।'];
-          const reply = replies[Math.floor(Math.random() * replies.length)];
-          const now = new Date();
-          const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-          c.messages.push({from: 'them', text: reply, time});
-          renderMessages(c);
-          renderChatList(document.getElementById('searchInput').value);
-          if (statusLine) {
-            statusLine.textContent = c.online ? 'অনলাইন' : 'সর্বশেষ দেখা ' + c.lastSeen;
-            if (!c.online) statusLine.classList.add('muted');
-          }
-        }, 1800);
-      }, 600);
+      // Simulate delivery -> read ticks only for the sender's own message.
+      setTimeout(() => { msg.status = 'delivered'; renderMessages(c); }, 500);
+      setTimeout(() => { msg.status = 'read'; renderMessages(c); renderChatList(); }, 1400);
     }
 
     document.getElementById('searchInput').addEventListener('input', (e) => renderChatList(e.target.value));
@@ -1318,7 +1285,7 @@
       phoneInput.focus();
     };
     document.getElementById('modalCancel').onclick = () => modalOverlay.classList.remove('show');
-    modalOverlay.onclick = (e) => {if (e.target === modalOverlay) modalOverlay.classList.remove('show');};
+    modalOverlay.onclick = (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove('show'); };
 
     document.getElementById('modalSubmit').onclick = () => {
       const phone = phoneInput.value.trim();
@@ -1329,7 +1296,7 @@
       // Simulated lookup — in production this calls GET /api/users/lookup?phone=...
       const found = Math.random() > 0.3;
       if (!found) {
-        modalError.textContent = 'User not found — এই নম্বরে ChatConnect অ্যাকাউন্ট নেই';
+        modalError.textContent = 'User not found — এই নম্বরে Easy Chat অ্যাকাউন্ট নেই';
         return;
       }
       const newContact = {
@@ -1338,6 +1305,7 @@
         initials: phone.slice(-2),
         online: true,
         lastSeen: null,
+        autoReplyEnabled: false,
         messages: [],
       };
       contacts.unshift(newContact);

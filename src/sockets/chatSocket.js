@@ -72,6 +72,7 @@ function initChatSocket(io) {
 
         if (receiverId) {
           io.to(`user:${receiverId}`).emit('message:new', populated);
+
           if (isUserConnected(receiverId)) {
             message.status = 'delivered';
             message.deliveredTo.push(receiverId);

@@ -7,6 +7,7 @@ router.use(requireAuth);
 
 router.get('/me', userController.getMe);
 router.put('/me', userController.updateProfile);
+router.put('/reply-settings', userController.updateReplySettings);
 router.delete('/me', userController.deleteAccount);
 
 router.get('/lookup', userController.lookupByPhone);

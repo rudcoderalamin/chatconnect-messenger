@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema(
 
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
+    // Auto-reply consent for saved contacts / real-user conversation flow
+    autoReplyEnabled: { type: Boolean, default: false },
+    autoReplyText: {
+      type: String,
+      default: 'আমি মেসেজটি পেলাম। একটু পরে উত্তর দেব।',
+      trim: true,
+    },
+
     // Security
     twoStepEnabled: { type: Boolean, default: false },
     twoStepPin: { type: String, select: false }, // hashed
